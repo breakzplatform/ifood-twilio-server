@@ -1,0 +1,712 @@
+{
+  "description": "IVR",
+  "states": [
+    {
+      "name": "Trigger",
+      "type": "trigger",
+      "transitions": [
+        {
+          "event": "incomingMessage"
+        },
+        {
+          "next": "play_ifood",
+          "event": "incomingCall"
+        },
+        {
+          "event": "incomingRequest"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 170,
+          "y": -470
+        }
+      }
+    },
+    {
+      "name": "menu_inicial",
+      "type": "gather-input-on-call",
+      "transitions": [
+        {
+          "next": "menu_inicial_tecla",
+          "event": "keypress"
+        },
+        {
+          "next": "menu_inicial_voz",
+          "event": "speech"
+        },
+        {
+          "next": "menu_inicial",
+          "event": "timeout"
+        }
+      ],
+      "properties": {
+        "voice": "Polly.Ricardo",
+        "number_of_digits": 1,
+        "speech_timeout": "auto",
+        "offset": {
+          "x": 290,
+          "y": 230
+        },
+        "loop": 1,
+        "finish_on_key": "",
+        "say": "Para fazer seu pedido aperte . . . . . 1 . . . . . ou fale pedido. Para ver seu carrinho aperte . . . . . 2 . . . . . ou diga carrinho. Se quiser ver os detalhes da sua conta, aperte . . . . . 9 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .",
+        "language": "pt-BR",
+        "stop_gather": true,
+        "gather_language": "pt-BR",
+        "profanity_filter": "false",
+        "timeout": 5
+      }
+    },
+    {
+      "name": "menu_inicial_tecla",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "event": "noMatch"
+        },
+        {
+          "next": "menu_pedido",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "1",
+              "arguments": [
+                "{{widgets.menu_inicial.Digits}}"
+              ],
+              "type": "equal_to",
+              "value": "1"
+            }
+          ]
+        },
+        {
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "2",
+              "arguments": [
+                "{{widgets.menu_inicial.Digits}}"
+              ],
+              "type": "equal_to",
+              "value": "2"
+            }
+          ]
+        },
+        {
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "9",
+              "arguments": [
+                "{{widgets.menu_inicial.Digits}}"
+              ],
+              "type": "equal_to",
+              "value": "9"
+            }
+          ]
+        },
+        {
+          "next": "send_sms_github",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "0",
+              "arguments": [
+                "{{widgets.menu_inicial.Digits}}"
+              ],
+              "type": "equal_to",
+              "value": "0"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.menu_inicial.Digits}}",
+        "offset": {
+          "x": -20,
+          "y": 510
+        }
+      }
+    },
+    {
+      "name": "menu_inicial_voz",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "next": "say_menu_inicial_voz_no_match",
+          "event": "noMatch"
+        },
+        {
+          "next": "menu_pedido",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "pedido",
+              "arguments": [
+                "{{widgets.menu_inicial.SpeechResult}}"
+              ],
+              "type": "matches_any_of",
+              "value": "pedido"
+            }
+          ]
+        },
+        {
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "carrinho",
+              "arguments": [
+                "{{widgets.menu_inicial.SpeechResult}}"
+              ],
+              "type": "matches_any_of",
+              "value": "carrinho"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.menu_inicial.SpeechResult}}",
+        "offset": {
+          "x": 640,
+          "y": 510
+        }
+      }
+    },
+    {
+      "name": "gather_pedido",
+      "type": "gather-input-on-call",
+      "transitions": [
+        {
+          "next": "split_pedido",
+          "event": "keypress"
+        },
+        {
+          "event": "speech"
+        },
+        {
+          "next": "say_pre_gather_pedido_ack",
+          "event": "timeout"
+        }
+      ],
+      "properties": {
+        "voice": "Polly.Ricardo",
+        "number_of_digits": 1,
+        "speech_timeout": "auto",
+        "offset": {
+          "x": 1580,
+          "y": 1890
+        },
+        "loop": 1,
+        "finish_on_key": "#",
+        "say": "{{widgets.http_post_menu_pedido_busca.parsed.say}}\n \n. . . . . . . . . . . . . . .\nCaso queira repetir digite . . . . . 0\nCaso queira fazer outra busca digite . . . . . estrela\nCaso queira ir para o menu inicial digite . . . . . jogo da velha",
+        "language": "pt-BR",
+        "stop_gather": false,
+        "gather_language": "en",
+        "profanity_filter": "true",
+        "timeout": 5
+      }
+    },
+    {
+      "name": "http_post_menu_pedido_busca",
+      "type": "make-http-request",
+      "transitions": [
+        {
+          "next": "say_pre_gather_pedido",
+          "event": "success"
+        },
+        {
+          "next": "menu_pedido_fala_pos_pedido",
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 1350,
+          "y": 1340
+        },
+        "method": "POST",
+        "content_type": "application/json;charset=utf-8",
+        "body": "{\"search\":\"{{widgets.menu_pedido.SpeechResult}} \", \"number\": \"{{trigger.call.From}} \"}",
+        "url": "https://ifood.joselito.run/search"
+      }
+    },
+    {
+      "name": "menu_pedido",
+      "type": "gather-input-on-call",
+      "transitions": [
+        {
+          "event": "keypress"
+        },
+        {
+          "next": "menu_pedido_fala_pos_pedido",
+          "event": "speech"
+        },
+        {
+          "next": "say_menu_inicial_voz_no_match",
+          "event": "timeout"
+        }
+      ],
+      "properties": {
+        "voice": "Polly.Ricardo",
+        "speech_timeout": "auto",
+        "offset": {
+          "x": 590,
+          "y": 780
+        },
+        "loop": 1,
+        "finish_on_key": "#",
+        "say": "Fale qual prato deseja buscar",
+        "language": "pt-BR",
+        "stop_gather": false,
+        "gather_language": "pt-BR",
+        "profanity_filter": "true",
+        "timeout": 5
+      }
+    },
+    {
+      "name": "menu_pedido_fala_pos_pedido",
+      "type": "say-play",
+      "transitions": [
+        {
+          "next": "http_post_menu_pedido_busca",
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "voice": "Polly.Ricardo",
+        "offset": {
+          "x": 1200,
+          "y": 1100
+        },
+        "loop": 1,
+        "say": "Aguarde na linha, estou pesquisando seu pedido",
+        "language": "pt-BR"
+      }
+    },
+    {
+      "name": "split_pedido",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "next": "say_pre_gather_pedido_ack",
+          "event": "noMatch"
+        },
+        {
+          "next": "say_pre_gather_pedido_repeat",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "0",
+              "arguments": [
+                "{{widgets.gather_pedido.Digits}}"
+              ],
+              "type": "equal_to",
+              "value": "0"
+            }
+          ]
+        },
+        {
+          "next": "say_escolheu_pedido",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "1,2,3,4,5,6,7,8,9",
+              "arguments": [
+                "{{widgets.gather_pedido.Digits}}"
+              ],
+              "type": "matches_any_of",
+              "value": "1,2,3,4,5,6,7,8,9"
+            }
+          ]
+        },
+        {
+          "next": "menu_inicial",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "#",
+              "arguments": [
+                "{{widgets.gather_pedido.Digits}}"
+              ],
+              "type": "equal_to",
+              "value": "#"
+            }
+          ]
+        },
+        {
+          "next": "menu_pedido",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "*",
+              "arguments": [
+                "{{widgets.gather_pedido.Digits}}"
+              ],
+              "type": "equal_to",
+              "value": "*"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.gather_pedido.Digits}}",
+        "offset": {
+          "x": 1580,
+          "y": 2230
+        }
+      }
+    },
+    {
+      "name": "say_escolheu_pedido",
+      "type": "say-play",
+      "transitions": [
+        {
+          "next": "http_post_menu_select",
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "voice": "Polly.Ricardo",
+        "offset": {
+          "x": 2370,
+          "y": 2260
+        },
+        "loop": 1,
+        "say": "Um momento.",
+        "language": "pt-BR"
+      }
+    },
+    {
+      "name": "say_pre_menu_inicial",
+      "type": "say-play",
+      "transitions": [
+        {
+          "next": "menu_inicial",
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "voice": "Polly.Ricardo",
+        "offset": {
+          "x": 300,
+          "y": -70
+        },
+        "loop": 1,
+        "say": "Olá, boas-vindas ao disque iFood.",
+        "language": "pt-BR"
+      }
+    },
+    {
+      "name": "say_pre_gather_pedido",
+      "type": "say-play",
+      "transitions": [
+        {
+          "next": "gather_pedido",
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "voice": "Polly.Ricardo",
+        "offset": {
+          "x": 1520,
+          "y": 1610
+        },
+        "loop": 1,
+        "say": "Obrigado por aguardar. Encontrei",
+        "language": "pt-BR"
+      }
+    },
+    {
+      "name": "say_pre_gather_pedido_repeat",
+      "type": "say-play",
+      "transitions": [
+        {
+          "next": "gather_pedido",
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "voice": "Polly.Ricardo",
+        "offset": {
+          "x": 1070,
+          "y": 1560
+        },
+        "loop": 1,
+        "say": "Foram encontrados",
+        "language": "pt-BR"
+      }
+    },
+    {
+      "name": "say_pre_gather_pedido_ack",
+      "type": "say-play",
+      "transitions": [
+        {
+          "next": "say_pre_gather_pedido_repeat",
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "voice": "Polly.Ricardo",
+        "offset": {
+          "x": 320,
+          "y": 1080
+        },
+        "loop": 1,
+        "say": "Oi, você está ai?",
+        "language": "pt-BR"
+      }
+    },
+    {
+      "name": "say_menu_inicial_voz_no_match",
+      "type": "say-play",
+      "transitions": [
+        {
+          "next": "menu_inicial",
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "voice": "Polly.Ricardo",
+        "offset": {
+          "x": 870,
+          "y": 230
+        },
+        "loop": 1,
+        "say": "Não entendi o que você falou. Vamos tentar novamente?",
+        "language": "pt-BR"
+      }
+    },
+    {
+      "name": "http_post_menu_select",
+      "type": "make-http-request",
+      "transitions": [
+        {
+          "next": "gather_select_pedido",
+          "event": "success"
+        },
+        {
+          "next": "fail_post_menu_select",
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 1610,
+          "y": 2550
+        },
+        "method": "POST",
+        "content_type": "application/json;charset=utf-8",
+        "body": "{\"digits\": \"{{widgets.gather_pedido.Digits}}\", \"number\": \"{{trigger.call.From}}\"}",
+        "url": "https://ifood.joselito.run/select"
+      }
+    },
+    {
+      "name": "gather_select_pedido",
+      "type": "gather-input-on-call",
+      "transitions": [
+        {
+          "next": "split_pedido_select_digits",
+          "event": "keypress"
+        },
+        {
+          "event": "speech"
+        },
+        {
+          "event": "timeout"
+        }
+      ],
+      "properties": {
+        "voice": "Polly.Ricardo",
+        "number_of_digits": 1,
+        "speech_timeout": "auto",
+        "offset": {
+          "x": 1610,
+          "y": 2860
+        },
+        "loop": 1,
+        "finish_on_key": "#",
+        "say": "{{widgets.http_post_menu_select.parsed.say}}\n\n. . . . . . . . . . . . . . .\nSe deseja continuar com seu pedido pressione . . . . . . . 1\n\n. . . . . . . . . . . . . . .\nCaso queira repetir digite . . . . . 0\nCaso queira fazer outra busca digite . . . . . estrela\nCaso queira ir para o menu inicial digite . . . . . jogo da velha",
+        "language": "pt-BR",
+        "stop_gather": false,
+        "gather_language": "en",
+        "profanity_filter": "true",
+        "timeout": 5
+      }
+    },
+    {
+      "name": "split_pedido_select_digits",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "event": "noMatch"
+        },
+        {
+          "next": "gather_select_pedido",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "0",
+              "arguments": [
+                "{{widgets.gather_select_pedido.Digits}}"
+              ],
+              "type": "equal_to",
+              "value": "0"
+            }
+          ]
+        },
+        {
+          "next": "play_ifood_success",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "1",
+              "arguments": [
+                "{{widgets.gather_select_pedido.Digits}}"
+              ],
+              "type": "equal_to",
+              "value": "1"
+            }
+          ]
+        },
+        {
+          "next": "menu_inicial",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "#",
+              "arguments": [
+                "{{widgets.gather_select_pedido.Digits}}"
+              ],
+              "type": "equal_to",
+              "value": "#"
+            }
+          ]
+        },
+        {
+          "next": "menu_pedido",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "*",
+              "arguments": [
+                "{{widgets.gather_select_pedido.Digits}}"
+              ],
+              "type": "equal_to",
+              "value": "*"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.gather_select_pedido.Digits}}",
+        "offset": {
+          "x": 1330,
+          "y": 3180
+        }
+      }
+    },
+    {
+      "name": "say_confirmed",
+      "type": "say-play",
+      "transitions": [
+        {
+          "next": "send_sms_github",
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "voice": "Polly.Ricardo",
+        "offset": {
+          "x": 1980,
+          "y": 3570
+        },
+        "loop": 1,
+        "say": "Pedido confirmado! Vou mandar um SMS para seu número com os dados do pedido!",
+        "language": "pt-BR"
+      }
+    },
+    {
+      "name": "fail_post_menu_select",
+      "type": "say-play",
+      "transitions": [
+        {
+          "next": "menu_pedido",
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "voice": "Polly.Ricardo",
+        "offset": {
+          "x": 2380,
+          "y": 2840
+        },
+        "loop": 1,
+        "say": "Eu tenho uma limitação quando busco no iFood: não consigo ver os detalhes de alguns pratos que precisam de seleções obrigatórias para serem montados. Tenta escolher outro prato, pode ser? Eu já encontrei",
+        "language": "pt-BR"
+      }
+    },
+    {
+      "name": "play_ifood",
+      "type": "say-play",
+      "transitions": [
+        {
+          "next": "say_pre_menu_inicial",
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "play": "https://ifood.joselito.run/ifood.mp3",
+        "offset": {
+          "x": 290,
+          "y": -280
+        },
+        "loop": 1
+      }
+    },
+    {
+      "name": "send_sms_github",
+      "type": "send-message",
+      "transitions": [
+        {
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 1990,
+          "y": 3850
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "(520) 389-5483",
+        "to": "{{trigger.call.From}}",
+        "body": "Obrigado por testar o Disk-iFood! A compra foi de mentira, mas se você quiser fazer funcionar de verdade, baixe o código em https://joselito.link/disk-ifood-twilio"
+      }
+    },
+    {
+      "name": "play_ifood_success",
+      "type": "say-play",
+      "transitions": [
+        {
+          "next": "say_confirmed",
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "play": "https://ifood.joselito.run/ifood.mp3",
+        "offset": {
+          "x": 1990,
+          "y": 3310
+        },
+        "loop": 1
+      }
+    }
+  ],
+  "initial_state": "Trigger",
+  "flags": {
+    "allow_concurrent_calls": true
+  }
+}
