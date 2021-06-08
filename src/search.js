@@ -3,16 +3,14 @@ const express = require('express');
 const router = express.Router();
 
 const fs = require('fs');
-const md5 = require('crypto').createHash('md5');
 
-router.post('/', async function (req, res, next) {
+router.post('/', async function (req, res) {
   res.setHeader('Content-Type', 'application/json');
 
   let output = '';
-  const phone = req.body.number;
-  const searchFoodItem = req.body.search.normalize('NFD').replace(/[\u0300-\u036f]/g, "");
-
   let sel = '';
+  const phone = req.body.number.trim();
+  const searchFoodItem = req.body.search.normalize('NFD').replace(/[\u0300-\u036f]/g, "");
 
   const browser = await puppeteer.launch({
     userDataDir: './puppeteer-data',
@@ -73,7 +71,7 @@ router.post('/', async function (req, res, next) {
   }
 
   fs.writeFile(
-    `./data/${md5.update(phone).digest('hex')}-dishs.json`,
+    `./data/${phone}-dishs.json`,
     JSON.stringify(dishsLinks),
     function (err) {
       if (err) {

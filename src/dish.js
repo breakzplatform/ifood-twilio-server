@@ -3,13 +3,12 @@ const express = require('express');
 const router = express.Router();
 
 const fs = require('fs');
-const md5 = require('crypto').createHash('md5');
 
 router.post('/', async function (req, res) {
   res.setHeader('Content-Type', 'application/json');
 
   let output = '';
-  const phone = md5.update(req.body.number).digest('hex');
+  const phone = req.body.number.trim();
   const dishs = JSON.parse(fs.readFileSync(`./data/${phone}-dishs.json`));
   const selectedDishIndex = req.body.digits;
 
