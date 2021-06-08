@@ -1,2 +1,4 @@
 # ifood-twilio-server
-Servidor utilizado como backend para uma aplicação no Twillo que posibilita fazer pedidos no iFood via chamada telefônica
+Servidor utilizado como backend para uma aplicação no Twilio que posibilita fazer pedidos no iFood via chamada telefônica
+
+_DISCLAIMER: este projeto não é ligado direta ou indiretamente ao iFood ou a Twilio de nenhuma forma_
